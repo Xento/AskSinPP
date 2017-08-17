@@ -421,14 +421,15 @@ public:   //--------------------------------------------------------------------
     // define init settings for TRX868
     static const uint8_t initVal[] PROGMEM = {
       CC1101_IOCFG2,    0x2E, //                      // non inverted GDO2, high impedance tri state
-      CC1101_IOCFG1,    0x2E, // (default)            // low output drive strength, non inverted GD=1, high impedance tri state
+      // /CC1101_IOCFG1,    0x2E, // (default)            // low output drive strength, non inverted GD=1, high impedance tri state
       CC1101_IOCFG0,    0x06, // packet CRC ok        // disable temperature sensor, non inverted GDO0,
       CC1101_FIFOTHR,   0x0D,                         // 0 ADC retention, 0 close in RX, TX FIFO = 9 / RX FIFO = 56 byte
       CC1101_SYNC1,     0xE9,                         // Sync word
       CC1101_SYNC0,     0xCA,
-      CC1101_PKTLEN,    0x3D,                         // packet length has to be set to 61
-      CC1101_PKTCTRL1,  0x04,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
-      CC1101_PKTCTRL0,  0x45,
+      // /CC1101_PKTLEN,    0x3D,                         //Default 0xFF, packet length has to be set to 61
+      //CC1101_PKTCTRL1,  0x04,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
+      CC1101_PKTCTRL1,  0x0C,                         // PQT = 0, CRC auto flush = 0, append status = 1, no address check
+      // /CC1101_PKTCTRL0,  0x45,					  // Default 0x45
       CC1101_FSCTRL1,   0x06,                         // frequency synthesizer control
 
       // 868.299866 MHz
@@ -444,10 +445,10 @@ public:   //--------------------------------------------------------------------
       CC1101_MDMCFG4,  0xC8,
       CC1101_MDMCFG3,  0x93,
       CC1101_MDMCFG2,  0x03,
-      CC1101_MDMCFG1,  0x22,
+      // /CC1101_MDMCFG1,  0x22,					  // Default 0x22
       CC1101_DEVIATN,  0x34,                          // 19.042969 kHz
-      CC1101_MCSM2,    0x01,
-      CC1101_MCSM1,    0x33,
+      // /CC1101_MCSM2,    0x01,					  // Default 0x07
+      CC1101_MCSM1,    0x03,
       CC1101_MCSM0,    0x18,
       CC1101_FOCCFG,   0x16,
       CC1101_AGCCTRL2, 0x43,
@@ -460,21 +461,25 @@ public:   //--------------------------------------------------------------------
       CC1101_FSTEST,  0x59,
       CC1101_TEST2,   0x81,
       CC1101_TEST1,   0x35,
-      CC1101_PATABLE, 0xC3,
+      CC1101_PATABLE, 0x03,
     };
     for (uint8_t i=0; i<sizeof(initVal); i+=2) {                    // write init value to TRX868
       writeRegister(pgm_read_byte(&initVal[i]), pgm_read_byte(&initVal[i+1]));
     }
-    DPRINT(F("2"));
-    spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
-    while (spi.readReg(CC1101_MARCSTATE, CC1101_STATUS) != 1) {               // waits until module gets ready
-      _delay_us(1);
-      DPRINT(F("."));
-    }
-    DPRINT(F("3"));
-    spi.writeReg(CC1101_PATABLE, PA_MaxPower);                        // configure PATABLE
-    flushrx();
-    spi.strobe(CC1101_SWORRST);                               // reset real time clock
+	
+	// Settings that ELV sets
+	DPRINT("CC Version: "); DHEXLN(spi.readReg(CC1101_VERSION, CC1101_STATUS));
+	
+	writeRegister(CC1101_FSCAL3,  0xE9);
+	writeRegister(CC1101_FSCAL2,  0x2A);
+	writeRegister(CC1101_FSCAL1,  0x1F);
+	writeRegister(CC1101_TEST0,  0x09);
+    
+	spi.strobe(CC1101_SCAL);                                // calibrate frequency synthesizer and turn it off
+	
+	_delay_ms(23);
+	
+	
     DPRINTLN(F(" - ready"));
   }
   

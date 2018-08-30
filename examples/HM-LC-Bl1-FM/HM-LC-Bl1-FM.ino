@@ -70,8 +70,8 @@ public:
   BlChannel () {}
   virtual ~BlChannel () {}
 
-  virtual void switchState(uint8_t oldstate,uint8_t newstate) {
-    BaseChannel::switchState(oldstate, newstate);
+  virtual void switchState(uint8_t oldstate,uint8_t newstate, uint32_t statedelay) {
+    BaseChannel::switchState(oldstate, newstate, statedelay);
     if( newstate == AS_CM_JT_RAMPON ) {
       motorUp();
     }

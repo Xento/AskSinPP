@@ -35,6 +35,9 @@ public:
   static void powerSave (__attribute__((unused)) Hal& hal) {
 #if defined __AVR_ATmega644P__ || defined (__AVR_ATmega1284P__)
     LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART1_OFF,USART0_ON,TWI_OFF);
+#elif defined __AVR_ATmega2560__
+    //there is an issue, so you have to manual change something in Low-Power.cpp: https://github.com/rocketscream/Low-Power/issues/30#issuecomment-336801240
+    LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF, TIMER5_OFF, TIMER4_OFF, TIMER3_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON, TIMER1_ON, TIMER0_OFF, SPI_ON, USART3_OFF,USART2_OFF, USART1_OFF, USART0_ON, TWI_OFF);
 #else
     LowPower.idle(SLEEP_FOREVER,ENABLEADC==true?ADC_ON:ADC_OFF,ENABLETIMER2==false?TIMER2_OFF:TIMER2_ON,TIMER1_ON,TIMER0_OFF,SPI_ON,USART0_ON,TWI_OFF);
 #endif
@@ -204,21 +207,23 @@ public:
   virtual ~BurstDetector () {}
   virtual void trigger (AlarmClock& clock) {
     uint32_t next = millis2ticks(250);
-    bool detect = hal.radio.detectBurst();
-    if( detect == true ) {
-      if( burst == false ) {
-        burst = true;
-        next = millis2ticks(30);
-        // DPRINTLN("1");
+    if( hal.activity.stayAwake() == false ) {
+      bool detect = hal.radio.detectBurst();
+      if( detect == true ) {
+        if( burst == false ) {
+          burst = true;
+          next = millis2ticks(30);
+          // DPRINTLN("1");
+        }
+        else {
+          burst = false;
+          hal.activity.stayAwake(millis2ticks(500));
+          // DPRINTLN("2");
+        }
       }
       else {
         burst = false;
-        hal.activity.stayAwake(millis2ticks(500));
-        // DPRINTLN("2");
       }
-    }
-    else {
-      burst = false;
     }
     set(next);
     clock.add(*this);

@@ -358,6 +358,7 @@ public:
              }
            }
          }
+#ifndef SENSOR_ONLY
          else {
            const ActionMsg& pm = msg.action();
            if( this->hasChannel(pm.channel())==true ) {
@@ -381,15 +382,22 @@ public:
                    answer = ch->process(msg.actionSet()) ? REPLAY_ACK : REPLAY_NACK;
                  }
                  break;
+               case AS_ACTION_COMMAND:
+                 if( ch->inhibit() == false ) {
+                   answer = ch->process(msg.actionCommand()) ? REPLAY_ACK : REPLAY_NACK;
+                 }
+                 break;
                }
              }
            }
          }
+#endif
        }
        else if( mtype == AS_MESSAGE_HAVE_DATA ) {
          DPRINTLN(F("HAVE DATA"));
          answer = REPLAY_ACK;
        }
+#ifndef SENSOR_ONLY
        else if (mtype == AS_MESSAGE_REMOTE_EVENT || mtype == AS_MESSAGE_SENSOR_EVENT) {
          answer = REPLAY_NACK;
          const RemoteEventMsg& pm = msg.remoteEvent();
@@ -418,6 +426,7 @@ public:
            ch = 0;
          }
        }
+#endif
 #ifdef USE_AES
        else if (mtype == AS_MESSAGE_KEY_EXCHANGE ) {
          if( validSignature(msg) == true ) {
